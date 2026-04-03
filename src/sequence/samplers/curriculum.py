@@ -276,3 +276,80 @@ FLATWORLD_BIG_CURRICULUM = Curriculum([
         threshold_type=None
     ),
 ])
+
+# Curriculum for bullet_safety_gym NavTask environments (e.g. SafetyBallNav-v0).
+# Uses the same staged reach/avoid structure as ZONES_CURRICULUM.
+BULLET_SAFETY_GYM_CURRICULUM = Curriculum([
+    ExplicitCurriculumStage(  # 0
+        task_fn=all_reach_tasks(1),
+        temperature=0.5,
+        threshold=0.8,
+        threshold_type='min',
+    ),
+    ExplicitCurriculumStage(  # 1
+        task_fn=all_reach_tasks(2),
+        threshold=0.95,
+        threshold_type='mean'
+    ),
+    ExplicitCurriculumStage(  # 2
+        task_fn=all_reach_avoid_tasks(1),
+        threshold=0.95,
+        threshold_type='mean'
+    ),
+    ExplicitCurriculumStage(  # 3
+        task_fn=all_reach_avoid_tasks(2),
+        threshold=0.9,
+        threshold_type='mean'
+    ),
+    MultiRandomStage(  # 4
+        stages=[
+            RandomCurriculumStage(
+                sampler=sample_reach_avoid(1, (1, 2), (0, 2)),
+                threshold=None,
+                threshold_type=None
+            ),
+            RandomCurriculumStage(
+                sampler=sample_reach_stay(30, (0, 1)),
+                threshold=None,
+                threshold_type=None
+            ),
+        ],
+        probs=[0.4, 0.6],
+        threshold=0.9,
+        threshold_type='mean'
+    ),
+    MultiRandomStage(  # 5
+        stages=[
+            RandomCurriculumStage(
+                sampler=sample_reach_avoid(2, (1, 2), (1, 2)),
+                threshold=None,
+                threshold_type=None
+            ),
+            RandomCurriculumStage(
+                sampler=sample_reach_stay(60, (0, 1)),
+                threshold=None,
+                threshold_type=None
+            ),
+        ],
+        probs=[0.8, 0.2],
+        threshold=0.9,
+        threshold_type='mean'
+    ),
+    MultiRandomStage(  # 6
+        stages=[
+            RandomCurriculumStage(
+                sampler=sample_reach_avoid(3, (1, 2), (0, 3)),
+                threshold=None,
+                threshold_type=None
+            ),
+            RandomCurriculumStage(
+                sampler=sample_reach_stay(60, (0, 2)),
+                threshold=None,
+                threshold_type=None
+            ),
+        ],
+        probs=[0.8, 0.2],
+        threshold=None,
+        threshold_type=None
+    ),
+])

@@ -1,0 +1,9 @@
+Metadata-Version: 2.4
+Name: bullet-safety-gym
+Version: 0.1.0
+Summary: Open Safety Gym environments based on PyBullet
+Requires-Dist: gym
+Requires-Dist: pybullet
+Requires-Dist: numpy
+Dynamic: requires-dist
+Dynamic: summary

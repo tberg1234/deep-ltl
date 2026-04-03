@@ -16,7 +16,9 @@ import argparse
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--env', type=str, choices=['PointLtl2-v0', 'LetterEnv-v0', 'FlatWorld-v0'], default='PointLtl2-v0')
+    parser.add_argument('--env', type=str,
+                        choices=['PointLtl2-v0', 'LetterEnv-v0', 'FlatWorld-v0', 'SafetyBallNav-v0'],
+                        default='PointLtl2-v0')
     parser.add_argument('--exp', type=str, default='deepset')
     parser.add_argument('--seed', type=int, default=1)
     parser.add_argument('--num_episodes', type=int, default=500)
@@ -25,7 +27,12 @@ def main():
     parser.add_argument('--render', action=argparse.BooleanOptionalAction, default=False)
     parser.add_argument('--deterministic', action=argparse.BooleanOptionalAction, default=True)
     args = parser.parse_args()
-    gamma = 0.94 if args.env == 'LetterEnv-v0' else 0.998 if args.env == 'PointLtl2-v0' else 0.98
+    if args.env == 'LetterEnv-v0':
+        gamma = 0.94
+    elif args.env in ('PointLtl2-v0', 'SafetyBallNav-v0'):
+        gamma = 0.998
+    else:
+        gamma = 0.98
     return simulate(args.env, gamma, args.exp, args.seed, args.num_episodes, args.formula, args.finite, args.render, args.deterministic)
 
 

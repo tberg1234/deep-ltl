@@ -127,3 +127,28 @@ flatworld = ModelConfig(
         activation=nn.ReLU
     )
 )
+
+bullet_safety_gym = ModelConfig(
+    actor=ActorConfig(
+        layers=[64, 64, 64],
+        activation=dict(
+            hidden=nn.ReLU,
+            output=nn.Tanh
+        ),
+        state_dependent_std=True
+    ),
+    critic=StandardNetConfig(
+        layers=[64, 64],
+        activation=nn.Tanh
+    ),
+    ltl_embedding_dim=16,
+    num_rnn_layers=1,
+    env_net=StandardNetConfig(
+        layers=[128, 64],
+        activation=nn.Tanh
+    ),
+    set_net=SetNetConfig(
+        layers=[32, 16],
+        activation=nn.ReLU
+    )
+)

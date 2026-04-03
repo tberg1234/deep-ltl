@@ -29,6 +29,9 @@ def make_env(
     if is_safety_gym_env(name):
         env = make_safety_gym_env(name, render_mode)
         max_steps = max_steps or 1000
+    elif is_bullet_safety_gym_env(name):
+        env = make_bullet_safety_gym_env(name, render_mode)
+        max_steps = max_steps or 1000
     elif name.startswith('Letter'):
         env = make_letter_env(name, render_mode)
         max_steps = max_steps or 75
@@ -55,6 +58,10 @@ def is_safety_gym_env(name: str) -> bool:
     return any([name.startswith(agent_name) for agent_name in ['Point', 'Car', 'Racecar', 'Doggo', 'Ant']])
 
 
+def is_bullet_safety_gym_env(name: str) -> bool:
+    return name in BULLET_SAFETY_GYM_CONFIGS
+
+
 def make_safety_gym_env(name: str, render_mode: str | None = None):
     # noinspection PyUnresolvedReferences
     import safety_gymnasium
@@ -77,4 +84,37 @@ def make_flatworld_env(name: str):
     import envs.flatworld
 
     env = gymnasium.make(name)
+    return env
+
+
+# Configurations for supported bullet_safety_gym environments.
+# Each entry mirrors the kwargs from bullet_safety_gym/__init__.py registration.
+BULLET_SAFETY_GYM_CONFIGS: dict[str, dict] = {
+    'SafetyBallNav-v0': dict(
+        agent='Ball',
+        task='NavTask',
+        obstacles={
+            'BlueBox': {'number': 1, 'fixed_base': True, 'movement': 'static'},
+            'PurpleBox': {'number': 1, 'fixed_base': True, 'movement': 'static'},
+            'BeigeBox': {'number': 1, 'fixed_base': True, 'movement': 'static'},
+            'BlueSphere': {'number': 1, 'fixed_base': True, 'movement': 'static'},
+            'PurpleSphere': {'number': 1, 'fixed_base': True, 'movement': 'static'},
+            'BeigeSphere': {'number': 1, 'fixed_base': True, 'movement': 'static'},
+        },
+        world={'name': 'SmallRoom', 'factor': 1},
+    ),
+}
+
+
+def make_bullet_safety_gym_env(name: str, render_mode: str | None = None):
+    from bullet_safety_gym.envs.builder import EnvironmentBuilder
+    from bullet_safety_gym.bullet_safety_gym_wrapper import BulletSafetyGymWrapper
+
+    if name not in BULLET_SAFETY_GYM_CONFIGS:
+        raise ValueError(f'Unknown bullet_safety_gym environment: {name}')
+
+    kwargs = BULLET_SAFETY_GYM_CONFIGS[name].copy()
+    kwargs['graphics'] = (render_mode == 'human')
+    env = EnvironmentBuilder(**kwargs)
+    env = BulletSafetyGymWrapper(env, render_mode=render_mode)
     return env
