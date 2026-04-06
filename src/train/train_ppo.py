@@ -100,7 +100,9 @@ class Trainer:
             curriculum.stage_index = curriculum_stage
             self.text_logger.important_info(f"Curriculum stage: {curriculum.stage_index}")
             sampler = CurriculumSampler.partial(curriculum)
-            envs.append(make_env(self.args.experiment.env, sampler, sequence=True))
+            envs.append(make_env(self.args.experiment.env, sampler, sequence=True,
+                                 randomize_agent=self.args.experiment.randomize_agent,
+                                 randomize_objects=self.args.experiment.randomize_objects))
         # Set different seeds for each environment. The seed offset is used to ensure that the seeds do not overlap.
         seed_offset = 100 * self.args.experiment.seed
         seeds = [seed_offset + i for i in range(self.args.experiment.num_procs)]
@@ -117,7 +119,26 @@ class Trainer:
             self.text_logger.important_info("Resuming training from existing run.")
             resuming = True
         except FileNotFoundError:
-            training_status = {"num_steps": 0, "num_updates": 0, "curriculum_stage": 0, "num_eval_steps": 0}
+            finetune_from = getattr(self.args, 'finetune_from', None)
+            if finetune_from is not None:
+                finetune_seed = getattr(self.args, 'finetune_seed', None) or self.args.experiment.seed
+                pretrained_store = ModelStore(self.args.experiment.env, finetune_from, finetune_seed)
+                try:
+                    pretrained_status = pretrained_store.load_best_model(map_location=self.args.experiment.device)
+                except FileNotFoundError:
+                    pretrained_status = pretrained_store.load_training_status(map_location=self.args.experiment.device)
+                self.text_logger.important_info(
+                    f"Fine-tuning from {finetune_from} (seed={finetune_seed}, "
+                    f"steps={pretrained_status.get('num_steps', '?')})."
+                )
+                pretrained_store.load_vocab()
+                training_status = {
+                    "num_steps": 0, "num_updates": 0, "curriculum_stage": 0, "num_eval_steps": 0,
+                    "model_state": pretrained_status["model_state"],
+                }
+                resuming = True  # vocab already loaded; skip re-init
+            else:
+                training_status = {"num_steps": 0, "num_updates": 0, "curriculum_stage": 0, "num_eval_steps": 0}
         return training_status, resuming
 
     def make_logger(self, log_csv: bool, log_wandb: bool, resuming: bool) -> MultiLogger:
@@ -160,6 +181,10 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument("--log_csv", action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument("--log_wandb", action=argparse.BooleanOptionalAction, default=False)
     parser.add_argument('--save', action=argparse.BooleanOptionalAction, default=True)
+    parser.add_argument('--finetune_from', type=str, default=None,
+                        help='Load initial weights from the best model of this experiment name.')
+    parser.add_argument('--finetune_seed', type=int, default=None,
+                        help='Seed of the experiment to finetune from (defaults to current seed).')
     args = parser.parse_args()
 
     if args.experiment.device == 'gpu':

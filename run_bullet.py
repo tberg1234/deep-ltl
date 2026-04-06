@@ -16,6 +16,10 @@ class Args:
     log_csv: bool = True
     log_wandb: bool = False
     save: bool = True
+    no_randomize_agent: bool = False
+    no_randomize_objects: bool = False
+    finetune_from: str | None = None
+    finetune_seed: int | None = None
 
 
 def main():
@@ -43,12 +47,22 @@ def main():
             '--device', args.device,
             '--num_procs', str(args.num_procs),
         ]
+        if args.no_randomize_agent:
+            command += ['--randomize_agent', 'false']
+        if args.no_randomize_objects:
+            command += ['--randomize_objects', 'false']
         if args.log_wandb:
             command.append('--log_wandb')
         if not args.log_csv:
             command.append('--no-log_csv')
         if not args.save:
             command.append('--no-save')
+        if args.finetune_from is not None:
+            command += ['--finetune_from', args.finetune_from]
+        if args.finetune_seed is not None:
+            command += ['--finetune_seed', str(args.finetune_seed)]
+
+        print(f"randomize_agent: {not args.no_randomize_agent}, randomize_objects: {not args.no_randomize_objects}")
 
         subprocess.run(command, env=env)
 

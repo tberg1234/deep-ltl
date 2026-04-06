@@ -1,0 +1,75 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python Debugger: Train Continuous",
+            "cwd": "/home/taylor/deep-ltl",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "run_bullet.py",
+            // "python": "/home/taylor/miniconda3/envs/deep-ltl/bin/python",
+            "console": "integratedTerminal",
+            "args": [
+                "--name",
+                "my_run3",
+                "--seed",
+                "1",
+                "--device",
+                "cpu",
+                "--num_procs",
+                "1",
+                "--no_randomize_agent",
+                "--no_randomize_objects",
+            ]
+        },
+        {
+            "name": "Python Debugger: Eval Continuous",
+            "cwd": "/home/taylor/deep-ltl",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "src/evaluation/simulate.py",
+            // "python": "/home/taylor/miniconda3/envs/deep-ltl/bin/python",
+            "console": "integratedTerminal",
+            "args": [
+                "--env",
+                "SafetyBallNav-v0",
+                "--exp",
+                "my_run",
+                "--seed",
+                "1",
+                "--formula",
+                "F blue_sphere",
+                "--render",
+                "--num_episodes",
+                "1"
+            ]
+        },
+        {
+            "name": "Python Debugger: Eval Repoman",
+            "cwd": "/home/taylor/deep-ltl",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "src/evaluation/simulate.py",
+            "python": "/home/taylor/miniconda3/envs/deep-ltl/bin/python",
+            "console": "integratedTerminal",
+            "args": [
+                "--env", "RepoMan-v0",
+                "--exp", "my_run",
+                "--seed", "1",
+                "--formula", "F square_blue",
+                "--render",
+                "--num_episodes", "1"
+            ]
+        },
+        {
+            "name": "Python Debugger: Current File",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal"
+        }
+    ]
+}

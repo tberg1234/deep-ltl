@@ -9,6 +9,9 @@ import torch
 from ltl.automata import LDBASequence
 from sequence.samplers.flatworld_sequence_samplers import flatworld_all_reach_tasks, \
     flatworld_sample_reach_avoid, flatworld_sample_reach_stay, flatworld_sample_reach
+from sequence.samplers.repoman_sequence_samplers import (
+    all_reach_tasks_repoman, all_reach_avoid_tasks_repoman, sample_reach_avoid_repoman,
+)
 from sequence.samplers.sequence_samplers import sample_reach_avoid, all_reach_avoid_tasks, all_reach_tasks, \
     all_reach_stay_tasks, sample_reach_stay
 
@@ -249,6 +252,30 @@ FLATWORLD_CURRICULUM = Curriculum([
         sampler=flatworld_sample_reach_avoid((1, 2), (1, 2), (0, 2)),
         threshold=None,
         threshold_type=None
+    ),
+])
+
+REPOMAN_CURRICULUM = Curriculum([
+    ExplicitCurriculumStage(  # 0: learn to reach single collectibles (shape+color pairs)
+        task_fn=all_reach_tasks_repoman(1),
+        temperature=0.5,
+        threshold=0.8,
+        threshold_type='min',
+    ),
+    ExplicitCurriculumStage(  # 1: reach + avoid single collectibles
+        task_fn=all_reach_avoid_tasks_repoman(1),
+        threshold=0.95,
+        threshold_type='mean',
+    ),
+    RandomCurriculumStage(  # 2: random reach-avoid sequences
+        sampler=sample_reach_avoid_repoman(1, (1, 2), (0, 2)),
+        threshold=0.9,
+        threshold_type='mean',
+    ),
+    RandomCurriculumStage(  # 3: longer reach-avoid sequences (open-ended)
+        sampler=sample_reach_avoid_repoman(2, (1, 2), (1, 2)),
+        threshold=None,
+        threshold_type=None,
     ),
 ])
 

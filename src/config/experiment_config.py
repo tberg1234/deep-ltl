@@ -15,4 +15,6 @@ class ExperimentConfig:
     num_procs: int = 1  # number of processes to use
     device: str = 'cpu'  # device to use for training
     ltl_sampler: str | None = None  # name of the LTL sampler
+    randomize_agent: bool = True  # whether to randomize the agent's starting position each episode
+    randomize_objects: bool = True  # whether to randomize obstacle positions each episode
 

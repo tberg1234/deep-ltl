@@ -128,6 +128,27 @@ flatworld = ModelConfig(
     )
 )
 
+repoman = ModelConfig(
+    actor=ActorConfig(
+        layers=[64, 64, 64],
+        activation=nn.ReLU,
+    ),
+    critic=StandardNetConfig(
+        layers=[64, 64],
+        activation=nn.ReLU
+    ),
+    ltl_embedding_dim=16,
+    num_rnn_layers=1,
+    env_net=StandardNetConfig(
+        layers=[64, 64],
+        activation=nn.ReLU
+    ),
+    set_net=SetNetConfig(
+        layers=[32, 16],
+        activation=nn.ReLU
+    )
+)
+
 bullet_safety_gym = ModelConfig(
     actor=ActorConfig(
         layers=[64, 64, 64],

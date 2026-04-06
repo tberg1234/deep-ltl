@@ -16,10 +16,14 @@ class BulletSafetyGymWrapper(gymnasium.Env):
 
     metadata = {}
 
-    def __init__(self, env, render_mode: Optional[str] = None):
+    def __init__(self, env, render_mode: Optional[str] = None,
+                 randomize_agent: bool = True, randomize_objects: bool = True):
         super().__init__()
         self.env = env
         self.render_mode = render_mode
+        self.randomize_agent = randomize_agent
+        self.randomize_objects = randomize_objects
+        self._fixed_obs_positions = None  # captured on first reset when randomize_objects=False
 
         task = env.task
         assert hasattr(task, 'get_collisions'), (
@@ -69,6 +73,31 @@ class BulletSafetyGymWrapper(gymnasium.Env):
         self._setup_nav_task()
         self._nav_task._curr_region_symbols = set()
         obs = self.env.reset()
+
+        needs_obs_refresh = False
+
+        if not self.randomize_objects:
+            if self._fixed_obs_positions is None:
+                # Capture positions from the first reset and lock them in for all future resets.
+                self._fixed_obs_positions = {ob.name: ob.get_position().copy()
+                                              for ob in self._nav_task.obstacles}
+                self._nav_task.set_locs(self._fixed_obs_positions)
+            # Obstacles are already at the fixed positions (set_locs hooks into set_obstacles).
+            # No position change here, so no obs refresh needed for objects alone.
+
+        if self.randomize_agent:
+            random_pos = self._nav_task.world.generate_random_xyz_position()
+            random_pos[2] = self._nav_task.agent.init_xyz[2]
+            self._nav_task.agent.set_position(random_pos)
+            yaw = np.random.uniform(-np.pi, np.pi)
+            quat = self._nav_task.bc.getQuaternionFromEuler([0, 0, yaw])
+            self._nav_task.agent.set_orientation(quat)
+            needs_obs_refresh = True
+
+        if needs_obs_refresh:
+            self._nav_task.bc.stepSimulation()
+            obs = self.env.get_observation()
+
         return obs, {'propositions': set()}
 
     def get_propositions(self) -> list[str]:
