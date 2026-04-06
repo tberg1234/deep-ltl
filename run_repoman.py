@@ -16,6 +16,8 @@ class Args:
     log_csv: bool = True
     log_wandb: bool = False
     save: bool = True
+    randomize_agent: bool = True
+    randomize_objects: bool = True
 
 
 def main():
@@ -49,6 +51,10 @@ def main():
             command.append('--no-log_csv')
         if not args.save:
             command.append('--no-save')
+        if not args.randomize_agent:
+            command.append('--no-randomize_agent')
+        if not args.randomize_objects:
+            command.append('--no-randomize_objects')
 
         subprocess.run(command, env=env)
 

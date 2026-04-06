@@ -100,8 +100,24 @@ Training took 8:24:15.
 # VIDEO GAME WORLD
 
 ## Train
+```bash
 python run_repoman.py --name my_run --seed 1 --device cpu --num_procs 8
+```
 
+# default — both randomized (training as normal)
+```bash
+python run_repoman.py --name my_run --seed 1 --device cpu
+```
+
+# fix object positions, randomize agent only
+```bash
+python run_repoman.py --name fixed_obj --seed 1 --device cpu --no-randomize_objects
+```
+
+# fix everything
+```bash
+python run_repoman.py --name fixed_all --seed 1 --device cpu --no-randomize_agent --no-randomize_objects
+```
 ### Training Spec
 REPOMAN_CURRICULUM defines the 4 training stages, each using a function from repoman_sequence_samplers.py:
 
@@ -123,6 +139,8 @@ The proposition names are the compound object names: square_purple, circle_purpl
 
   --save_gifs with --render
   --gif_dir overrides root directory
+  '--no-randomize_agent',    # fix agent start
+  '--no-randomize_objects',  # fix object positions
 
 ## Example formulas:
 

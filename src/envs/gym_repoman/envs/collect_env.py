@@ -136,6 +136,8 @@ class CollectEnv(gymnasium.Env):
     def __init__(self, board='original', render_mode=None,
                  randomize_agent=True, randomize_objects=True,
                  object_start_positions=None):
+        print(f"randomize_agent: {randomize_agent}")
+        print(f"randomize_objects: {randomize_objects}")
         super().__init__()
         self.render_mode = render_mode
         self._randomize_agent = randomize_agent
