@@ -20,10 +20,7 @@ def make_env(
         sampler: Callable[[list[str]], Callable],
         max_steps: Optional[int] = None,
         render_mode: str | None = None,
-        sequence=False,
-        randomize_agent: bool = True,
-        randomize_objects: bool = True,
-        **env_kwargs,
+        sequence=False
 ):
     from envs.seq_wrapper import SequenceWrapper
     from envs.ldba_wrapper import LDBAWrapper
@@ -33,8 +30,7 @@ def make_env(
         env = make_safety_gym_env(name, render_mode)
         max_steps = max_steps or 1000
     elif is_bullet_safety_gym_env(name):
-        env = make_bullet_safety_gym_env(name, render_mode, randomize_agent=randomize_agent,
-                                         randomize_objects=randomize_objects)
+        env = make_bullet_safety_gym_env(name, render_mode)
         max_steps = max_steps or 1000
     elif name.startswith('Letter'):
         env = make_letter_env(name, render_mode)
@@ -43,10 +39,7 @@ def make_env(
         env = make_flatworld_env(name)
         max_steps = max_steps or 500
     elif name.startswith('RepoMan'):
-        env = make_repoman_env(name, render_mode,
-                               randomize_agent=randomize_agent,
-                               randomize_objects=randomize_objects,
-                               **env_kwargs)
+        env = make_repoman_env(name, render_mode)
         max_steps = max_steps or 200
     else:
         raise ValueError(f'Unknown environment: {name}')
@@ -97,15 +90,10 @@ def make_flatworld_env(name: str):
     return env
 
 
-def make_repoman_env(name: str, render_mode: str | None = None,
-                    randomize_agent: bool = True, randomize_objects: bool = True,
-                    **env_kwargs):
+def make_repoman_env(name: str, render_mode: str | None = None):
     import envs.gym_repoman
 
-    env = gymnasium.make(name, render_mode=render_mode,
-                         randomize_agent=randomize_agent,
-                         randomize_objects=randomize_objects,
-                         **env_kwargs)
+    env = gymnasium.make(name, render_mode=render_mode)
     return env
 
 
@@ -128,8 +116,7 @@ BULLET_SAFETY_GYM_CONFIGS: dict[str, dict] = {
 }
 
 
-def make_bullet_safety_gym_env(name: str, render_mode: str | None = None,
-                               randomize_agent: bool = True, randomize_objects: bool = True):
+def make_bullet_safety_gym_env(name: str, render_mode: str | None = None):
     from bullet_safety_gym.envs.builder import EnvironmentBuilder
     from bullet_safety_gym.bullet_safety_gym_wrapper import BulletSafetyGymWrapper
 
@@ -139,6 +126,5 @@ def make_bullet_safety_gym_env(name: str, render_mode: str | None = None,
     kwargs = BULLET_SAFETY_GYM_CONFIGS[name].copy()
     kwargs['graphics'] = (render_mode == 'human')
     env = EnvironmentBuilder(**kwargs)
-    env = BulletSafetyGymWrapper(env, render_mode=render_mode,
-                                  randomize_agent=randomize_agent, randomize_objects=randomize_objects)
+    env = BulletSafetyGymWrapper(env, render_mode=render_mode)
     return env

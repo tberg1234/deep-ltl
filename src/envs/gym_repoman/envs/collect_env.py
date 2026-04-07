@@ -102,12 +102,12 @@ class CollectEnv(gymnasium.Env):
     }
 
     _AVAILABLE_COLLECTIBLES = [
-        ('circle', 'beige'),
-        ('circle', 'blue'),
-        ('circle', 'purple'),
-        ('square', 'blue'),
         ('square', 'purple'),
+        ('circle', 'purple'),
         ('square', 'beige'),
+        ('circle', 'beige'),
+        ('square', 'blue'),
+        ('circle', 'blue'),
     ]
 
     _ACTIONS = {
@@ -120,34 +120,10 @@ class CollectEnv(gymnasium.Env):
     _SCREEN_SIZE = (400, 400)
     _SPRITE_SIZE = 40
     _GRID_SIZE = 10
-    _DISPLAY_SCALE = 2  # multiply screen size for the human render window
 
-    # Default fixed positions for each collectible (in _AVAILABLE_COLLECTIBLES order).
-    # Any collectible without a listed position falls back to the next free space.
-    _DEFAULT_OBJECT_POSITIONS = [
-        (2, 7),  # square_purple
-        (2, 5),  # circle_purple
-        (3, 6),  # square_beige
-        (2, 6),  # circle_beige
-        (1, 6),  # square_blue
-        # (8, 1) circle_blue — omitted, falls back to first unclaimed free space
-    ]
-
-    def __init__(self, board='original', render_mode=None,
-                 randomize_agent=True, randomize_objects=True,
-                 object_start_positions=None, player_start=(4, 6)):
-        print(f"randomize_agent: {randomize_agent}")
-        print(f"randomize_objects: {randomize_objects}")
+    def __init__(self, board='original', render_mode=None):
         super().__init__()
         self.render_mode = render_mode
-        self._randomize_agent = randomize_agent
-        self._randomize_objects = randomize_objects
-        self._player_start = player_start
-        # object_start_positions overrides _DEFAULT_OBJECT_POSITIONS when randomize_objects=False
-        self._object_start_positions = (
-            object_start_positions if object_start_positions is not None
-            else self._DEFAULT_OBJECT_POSITIONS
-        )
         self.action_space = Discrete(4)
 
         # Flat observation: normalized (row, col) for player + each collectible
@@ -161,7 +137,6 @@ class CollectEnv(gymnasium.Env):
         pygame.init()
         pygame.display.init()
         pygame.display.set_mode((1, 1))
-        self._display_window = None
         self._bestdepth = pygame.display.mode_ok(self._SCREEN_SIZE, 0, 32)
         self._surface = pygame.Surface(self._SCREEN_SIZE, 0, self._bestdepth)
         self._background = pygame.Surface(self._SCREEN_SIZE)
@@ -199,39 +174,14 @@ class CollectEnv(gymnasium.Env):
     def reset(self, seed=None, options=None):
         super().reset(seed=seed)
 
-        n_obj = len(self.collectibles)
+        # Sample unique free positions for player + all collectibles
+        n = 1 + len(self.collectibles)
+        indices = self.np_random.choice(len(self.free_spaces), size=n, replace=False)
+        positions = [self.free_spaces[int(i)] for i in indices]
 
-        if self._randomize_agent and self._randomize_objects:
-            # All positions sampled jointly (no collisions guaranteed)
-            indices = self.np_random.choice(len(self.free_spaces), size=1 + n_obj, replace=False)
-            positions = [self.free_spaces[int(i)] for i in indices]
-            player_pos = positions[0]
-            obj_positions = positions[1:]
-        elif self._randomize_objects:
-            # Player fixed at player_start; objects fill remaining spaces randomly
-            player_pos = self._player_start
-            remaining = self.free_spaces[1:]
-            indices = self.np_random.choice(len(remaining), size=n_obj, replace=False)
-            obj_positions = [remaining[int(i)] for i in indices]
-        elif self._randomize_agent:
-            # Objects fixed at free_spaces[1..n_obj]; player fills a remaining space randomly
-            obj_positions = self.free_spaces[1:n_obj + 1]
-            remaining = [s for s in self.free_spaces if s not in obj_positions]
-            idx = int(self.np_random.integers(len(remaining)))
-            player_pos = remaining[idx]
-        else:
-            # Fully deterministic: use _object_start_positions, filling any gaps
-            # with the first unclaimed free spaces
-            obj_positions = list(self._object_start_positions[:n_obj])
-            if len(obj_positions) < n_obj:
-                claimed = set(obj_positions)
-                fallbacks = [s for s in self.free_spaces if s not in claimed]
-                obj_positions += fallbacks[:n_obj - len(obj_positions)]
-            player_pos = self._player_start
-
-        self.player.reset(player_pos)
+        self.player.reset(positions[0])
         self._label_map = {}
-        for collectible, pos in zip(self.collectibles, obj_positions):
+        for collectible, pos in zip(self.collectibles, positions[1:]):
             collectible.reset(pos)
             self._label_map[pos] = collectible.symbols
 
@@ -283,13 +233,6 @@ class CollectEnv(gymnasium.Env):
         render_group.add(self.player)
         render_group.draw(self._surface)
         if self.render_mode == 'human':
-            display_w = self._SCREEN_SIZE[0] * self._DISPLAY_SCALE
-            display_h = self._SCREEN_SIZE[1] * self._DISPLAY_SCALE
-            if self._display_window is None:
-                self._display_window = pygame.display.set_mode((display_w, display_h))
-                pygame.display.set_caption('RepoMan')
-            scaled = pygame.transform.scale(self._surface, (display_w, display_h))
-            self._display_window.blit(scaled, (0, 0))
             pygame.display.flip()
         elif self.render_mode == 'rgb_array':
             return np.copy(pygame.surfarray.array3d(self._surface)).swapaxes(0, 1)
