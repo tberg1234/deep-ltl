@@ -256,25 +256,24 @@ FLATWORLD_CURRICULUM = Curriculum([
 ])
 
 REPOMAN_CURRICULUM = Curriculum([
-    MultiRandomStage(  # 0: mix of reach-avoid and pure reach (mirrors FLATWORLD_CURRICULUM stage 0)
-        stages=[
-            RandomCurriculumStage(
-                sampler=sample_reach_avoid_repoman((1, 2), 1, 1),
-                threshold=None,
-                threshold_type=None,
-            ),
-            RandomCurriculumStage(
-                sampler=sample_reach_avoid_repoman((1, 2), 1, 0),
-                threshold=None,
-                threshold_type=None,
-            ),
-        ],
-        probs=[0.6, 0.4],
+    ExplicitCurriculumStage(  # 0: learn to reach single collectibles (shape+color pairs)
+        task_fn=all_reach_tasks_repoman(1),
+        temperature=0.5,
         threshold=0.8,
+        threshold_type='min',
+    ),
+    ExplicitCurriculumStage(  # 1: reach + avoid single collectibles
+        task_fn=all_reach_avoid_tasks_repoman(1),
+        threshold=0.95,
         threshold_type='mean',
     ),
-    RandomCurriculumStage(  # 1: variable depth reach-avoid (mirrors FLATWORLD_CURRICULUM stage 1)
-        sampler=sample_reach_avoid_repoman((1, 2), (1, 2), (0, 2)),
+    RandomCurriculumStage(  # 2: random reach-avoid sequences
+        sampler=sample_reach_avoid_repoman(1, (1, 2), (0, 2)),
+        threshold=0.9,
+        threshold_type='mean',
+    ),
+    RandomCurriculumStage(  # 3: longer reach-avoid sequences (open-ended)
+        sampler=sample_reach_avoid_repoman(2, (1, 2), (1, 2)),
         threshold=None,
         threshold_type=None,
     ),
