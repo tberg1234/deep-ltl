@@ -10,8 +10,9 @@ class BulletSafetyGymWrapper(gymnasium.Env):
     Wraps a bullet_safety_gym NavTask environment to the gymnasium API for LTL training.
 
     The inner env must be an EnvironmentBuilder instance (not wrapped in gym's TimeLimit).
-    Propositions correspond to the named obstacles in the scene; a proposition is true
-    whenever the agent is within detection distance of the corresponding obstacle.
+    Propositions are the individual color/shape tokens (e.g. 'blue', 'box', 'sphere').
+    When the agent touches an obstacle, the two tokens that make up its name become true
+    (e.g. touching blue_box → {'blue', 'box'}).  This mirrors the repoman AP scheme.
     """
 
     metadata = {}
@@ -36,8 +37,12 @@ class BulletSafetyGymWrapper(gymnasium.Env):
         # (no obstacle has empty symbols), so the inner env never terminates.
         self._setup_nav_task()
 
-        # Propositions = obstacle names, already sorted in bases.Task.__init__
-        self._propositions = [obs.name for obs in self._nav_task.obstacles]
+        # Propositions are individual color/shape tokens.  Each obstacle's symbols
+        # attribute already splits its name (e.g. blue_box → {'blue', 'box'}).
+        all_tokens: set[str] = set()
+        for obs in self._nav_task.obstacles:
+            all_tokens |= obs.symbols
+        self._propositions = sorted(all_tokens)
 
         # Convert gym.spaces -> gymnasium.spaces
         gym_obs = env.observation_space
@@ -59,8 +64,10 @@ class BulletSafetyGymWrapper(gymnasium.Env):
         self._nav_task.set_penalty(False)
 
     def _get_active_propositions(self) -> set:
-        """Return propositions currently true (agent within detection distance)."""
-        return {obs.name for obs in self._nav_task.get_collisions()}
+        """Return tokens of the first obstacle the agent is touching, or empty set."""
+        for obs in self._nav_task.get_collisions():
+            return set(obs.symbols)
+        return set()
 
     def step(self, action) -> tuple:
         obs, _reward, _done, info = self.env.step(action)
@@ -105,7 +112,13 @@ class BulletSafetyGymWrapper(gymnasium.Env):
 
     def get_possible_assignments(self) -> list:
         from ltl.logic import Assignment
-        return Assignment.zero_or_one_propositions(set(self._propositions))
+        from sequence.samplers.bullet_sequence_samplers import _OBJECTS
+        props = set(self._propositions)
+        # Zero assignment (agent not touching anything) + one per object type
+        assignments = [Assignment({p: False for p in props})]
+        for shape, colour in _OBJECTS:
+            assignments.append(Assignment({p: (p in {shape, colour}) for p in props}))
+        return assignments
 
     def render(self):
         return self.env.render()

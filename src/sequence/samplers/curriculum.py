@@ -12,6 +12,10 @@ from sequence.samplers.flatworld_sequence_samplers import flatworld_all_reach_ta
 from sequence.samplers.repoman_sequence_samplers import (
     all_reach_tasks_repoman, all_reach_avoid_tasks_repoman, sample_reach_avoid_repoman,
 )
+from sequence.samplers.bullet_sequence_samplers import (
+    all_reach_tasks_bullet, all_reach_avoid_tasks_bullet,
+    sample_reach_avoid_bullet, sample_reach_stay_bullet,
+)
 from sequence.samplers.sequence_samplers import sample_reach_avoid, all_reach_avoid_tasks, all_reach_tasks, \
     all_reach_stay_tasks, sample_reach_stay
 
@@ -305,78 +309,79 @@ FLATWORLD_BIG_CURRICULUM = Curriculum([
 ])
 
 # Curriculum for bullet_safety_gym NavTask environments (e.g. SafetyBallNav-v0).
-# Uses the same staged reach/avoid structure as ZONES_CURRICULUM.
+# Uses pair-based APs (color + shape tokens) matching the bullet_safety_gym obstacle
+# symbols, mirroring how repoman encodes collectibles.
 BULLET_SAFETY_GYM_CURRICULUM = Curriculum([
     ExplicitCurriculumStage(  # 0
-        task_fn=all_reach_tasks(1),
+        task_fn=all_reach_tasks_bullet(1),
         temperature=0.5,
         threshold=0.8,
         threshold_type='min',
     ),
     ExplicitCurriculumStage(  # 1
-        task_fn=all_reach_tasks(2),
+        task_fn=all_reach_tasks_bullet(2),
         threshold=0.95,
-        threshold_type='mean'
+        threshold_type='mean',
     ),
     ExplicitCurriculumStage(  # 2
-        task_fn=all_reach_avoid_tasks(1),
+        task_fn=all_reach_avoid_tasks_bullet(1),
         threshold=0.95,
-        threshold_type='mean'
+        threshold_type='mean',
     ),
     ExplicitCurriculumStage(  # 3
-        task_fn=all_reach_avoid_tasks(2),
+        task_fn=all_reach_avoid_tasks_bullet(2),
         threshold=0.9,
-        threshold_type='mean'
+        threshold_type='mean',
     ),
     MultiRandomStage(  # 4
         stages=[
             RandomCurriculumStage(
-                sampler=sample_reach_avoid(1, (1, 2), (0, 2)),
+                sampler=sample_reach_avoid_bullet(1, (1, 2), (0, 2)),
                 threshold=None,
-                threshold_type=None
+                threshold_type=None,
             ),
             RandomCurriculumStage(
-                sampler=sample_reach_stay(30, (0, 1)),
+                sampler=sample_reach_stay_bullet(30, (0, 1)),
                 threshold=None,
-                threshold_type=None
+                threshold_type=None,
             ),
         ],
         probs=[0.4, 0.6],
         threshold=0.9,
-        threshold_type='mean'
+        threshold_type='mean',
     ),
     MultiRandomStage(  # 5
         stages=[
             RandomCurriculumStage(
-                sampler=sample_reach_avoid(2, (1, 2), (1, 2)),
+                sampler=sample_reach_avoid_bullet(2, (1, 2), (1, 2)),
                 threshold=None,
-                threshold_type=None
+                threshold_type=None,
             ),
             RandomCurriculumStage(
-                sampler=sample_reach_stay(60, (0, 1)),
+                sampler=sample_reach_stay_bullet(60, (0, 1)),
                 threshold=None,
-                threshold_type=None
+                threshold_type=None,
             ),
         ],
         probs=[0.8, 0.2],
         threshold=0.9,
-        threshold_type='mean'
+        threshold_type='mean',
     ),
     MultiRandomStage(  # 6
         stages=[
             RandomCurriculumStage(
-                sampler=sample_reach_avoid(3, (1, 2), (0, 3)),
+                sampler=sample_reach_avoid_bullet(3, (1, 2), (0, 3)),
                 threshold=None,
-                threshold_type=None
+                threshold_type=None,
             ),
             RandomCurriculumStage(
-                sampler=sample_reach_stay(60, (0, 2)),
+                sampler=sample_reach_stay_bullet(60, (0, 2)),
                 threshold=None,
-                threshold_type=None
+                threshold_type=None,
             ),
         ],
         probs=[0.8, 0.2],
         threshold=None,
-        threshold_type=None
+        threshold_type=None,
     ),
 ])
