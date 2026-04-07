@@ -3,28 +3,18 @@ from typing import Callable
 
 from ltl.automata import LDBASequence
 from ltl.logic import Assignment
+from envs.gym_repoman.envs.collect_env import CollectEnv
 
-# Matches CollectEnv._AVAILABLE_COLLECTIBLES
-_COLLECTIBLES = [
-    ('square', 'purple'),
-    ('circle', 'purple'),
-    ('square', 'beige'),
-    ('circle', 'beige'),
-    ('square', 'blue'),
-    ('circle', 'blue'),
-]
-
-
-def _pair_frozen(shape: str, colour: str, propositions: list[str]):
-    true_props = {shape, colour}
-    return Assignment({p: (p in true_props) for p in propositions}).to_frozen()
+_env = CollectEnv()
+_assignments = _env.get_possible_assignments()
+_assignments.remove(Assignment.zero_propositions(_env.get_propositions()))
 
 
 def all_reach_tasks_repoman(depth: int) -> Callable[[list[str]], list[LDBASequence]]:
     def wrapper(propositions: list[str]) -> list[LDBASequence]:
         reachs = [
-            (frozenset([_pair_frozen(s, c, propositions)]), frozenset())
-            for s, c in _COLLECTIBLES
+            (frozenset([a.to_frozen()]), frozenset())
+            for a in _assignments
         ]
 
         def rec(d):
@@ -48,12 +38,12 @@ def all_reach_avoid_tasks_repoman(depth: int) -> Callable[[list[str]], list[LDBA
     def wrapper(propositions: list[str]) -> list[LDBASequence]:
         reach_avoids = [
             (
-                frozenset([_pair_frozen(s1, c1, propositions)]),
-                frozenset([_pair_frozen(s2, c2, propositions)]),
+                frozenset([a1.to_frozen()]),
+                frozenset([a2.to_frozen()]),
             )
-            for s1, c1 in _COLLECTIBLES
-            for s2, c2 in _COLLECTIBLES
-            if (s1, c1) != (s2, c2)
+            for a1 in _assignments
+            for a2 in _assignments
+            if a1 != a2
         ]
 
         def rec(d):
@@ -79,23 +69,23 @@ def sample_reach_avoid_repoman(
         num_avoid: int | tuple[int, int],
 ) -> Callable[[list[str]], LDBASequence]:
     def wrapper(propositions: list[str]) -> LDBASequence:
-        def sample_one(last_pair):
-            available = [pair for pair in _COLLECTIBLES if pair != last_pair]
+        def sample_one(last_assignment):
+            available = [a for a in _assignments if a != last_assignment]
             nr = random.randint(*num_reach) if isinstance(num_reach, tuple) else num_reach
             na = random.randint(*num_avoid) if isinstance(num_avoid, tuple) else num_avoid
-            reach_pairs = random.sample(available, min(nr, len(available)))
-            avoid_available = [pair for pair in available if pair not in reach_pairs]
+            reach_assignments = random.sample(available, min(nr, len(available)))
+            avoid_available = [a for a in available if a not in reach_assignments]
             na = min(na, len(avoid_available))
-            avoid_pairs = random.sample(avoid_available, na)
-            reach = frozenset([_pair_frozen(s, c, propositions) for s, c in reach_pairs])
-            avoid = frozenset([_pair_frozen(s, c, propositions) for s, c in avoid_pairs])
-            return reach, avoid, reach_pairs[0]
+            avoid_assignments = random.sample(avoid_available, na)
+            reach = frozenset([a.to_frozen() for a in reach_assignments])
+            avoid = frozenset([a.to_frozen() for a in avoid_assignments])
+            return reach, avoid, reach_assignments[0]
 
         d = random.randint(*depth) if isinstance(depth, tuple) else depth
-        last_pair = None
+        last_assignment = None
         seq = []
         for _ in range(d):
-            reach, avoid, last_pair = sample_one(last_pair)
+            reach, avoid, last_assignment = sample_one(last_assignment)
             seq.append((reach, avoid))
         return LDBASequence(seq)
 
