@@ -102,12 +102,12 @@ class CollectEnv(gymnasium.Env):
     }
 
     _AVAILABLE_COLLECTIBLES = [
-        ('square', 'purple'),
-        ('circle', 'purple'),
-        ('square', 'beige'),
         ('circle', 'beige'),
-        ('square', 'blue'),
         ('circle', 'blue'),
+        ('circle', 'purple'),
+        ('square', 'blue'),
+        ('square', 'purple'),
+        ('square', 'beige'),
     ]
 
     _ACTIONS = {
@@ -135,13 +135,14 @@ class CollectEnv(gymnasium.Env):
 
     def __init__(self, board='original', render_mode=None,
                  randomize_agent=True, randomize_objects=True,
-                 object_start_positions=None):
+                 object_start_positions=None, player_start=(4, 6)):
         print(f"randomize_agent: {randomize_agent}")
         print(f"randomize_objects: {randomize_objects}")
         super().__init__()
         self.render_mode = render_mode
         self._randomize_agent = randomize_agent
         self._randomize_objects = randomize_objects
+        self._player_start = player_start
         # object_start_positions overrides _DEFAULT_OBJECT_POSITIONS when randomize_objects=False
         self._object_start_positions = (
             object_start_positions if object_start_positions is not None
@@ -207,8 +208,8 @@ class CollectEnv(gymnasium.Env):
             player_pos = positions[0]
             obj_positions = positions[1:]
         elif self._randomize_objects:
-            # Player fixed at free_spaces[0]; objects fill remaining spaces randomly
-            player_pos = self.free_spaces[0]
+            # Player fixed at player_start; objects fill remaining spaces randomly
+            player_pos = self._player_start
             remaining = self.free_spaces[1:]
             indices = self.np_random.choice(len(remaining), size=n_obj, replace=False)
             obj_positions = [remaining[int(i)] for i in indices]
@@ -226,7 +227,7 @@ class CollectEnv(gymnasium.Env):
                 claimed = set(obj_positions)
                 fallbacks = [s for s in self.free_spaces if s not in claimed]
                 obj_positions += fallbacks[:n_obj - len(obj_positions)]
-            player_pos = self.free_spaces[0]
+            player_pos = self._player_start
 
         self.player.reset(player_pos)
         self._label_map = {}

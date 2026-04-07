@@ -21,6 +21,9 @@ plots save to plots/<env>/
 
 
 # CONTINUOUS ENVIRONMENT
+
+Currently configured like Zone Env, where each object is one AP: ex. "blue_box"
+
 ## Install bullet_safety_gym
 pip install -e src/envs/bullet_safety_gym/
 
@@ -60,9 +63,9 @@ To visualize an existing policy:
   --formula "F blue_box" --render --num_episodes 1
 ```
   
-## Run Record:
+### Run Record:
 
-### my_run:
+#### my_run:
 ExplicitCurriculumStage 0 = "min" (default)
 
 ```bash
@@ -78,7 +81,7 @@ python run_bullet.py --name my_run --seed 1 --device cpu --num_procs 4
 ```
 Training took 4:30:10.
 
-### my_run2:
+#### my_run2:
 ExplicitCurriculumStage 0 = "mean" 
 
 ```bash
@@ -87,7 +90,7 @@ python run_bullet.py --name my_run2 --seed 1 --device cpu --num_procs 8
 
 Training took 8:22:43.
 
-### my_run3:
+#### my_run3:
 ExplicitCurriculumStage 0 = "min" (default), static objects and agent
 
 ```bash
@@ -99,10 +102,20 @@ Training took 8:24:15.
 
 # VIDEO GAME WORLD
 
+Currently configured like Flatworld, where each object/area can be two APs: ex. ["blue", "box"]
+
 ## Train
 ```bash
 python run_repoman.py --name my_run --seed 1 --device cpu --num_procs 8
 ```
+
+Direct mirror of FLATWORLD_CURRICULUM:
+
+FlatWorld	RepoMan
+Stage 0	MultiRandom 60% reach-avoid(1-2 depth, 1 reach, 1 avoid) + 40% reach(1-2 depth)	same structure using sample_reach_avoid_repoman with num_avoid=0 for pure reach
+Stage 1	Random reach-avoid variable depth/avoid	same using repoman sampler
+Threshold	0.8 mean → open-ended	0.8 mean → open-ended
+The num_avoid=0 case in sample_reach_avoid_repoman handles pure reach (equivalent to flatworld_sample_reach), since avoid_pairs will be empty and produce frozenset().
 
 # default — both randomized (training as normal)
 ```bash
@@ -132,24 +145,47 @@ Stage 3: sample_reach_avoid_repoman(2, (1,2), (1,2)) — longer sequences
 For evaluation, the specs come from LTL formula strings in simulate.py (--formula "F square_blue") which are parsed and converted to LDBASequence via FixedSampler. Test formula sets would live in eval_test_tasks_finite.py under env_to_tasks['RepoMan-v0'] — which doesn't exist yet.
 
 ### Visualization
-PYTHONPATH=src/ python src/evaluation/simulate.py \
-  --env RepoMan-v0 --exp my_run --seed 1 \
-  --formula "F square_blue" --render --num_episodes 1
+
 The proposition names are the compound object names: square_purple, circle_purple, square_beige, circle_beige, square_blue, circle_blue.
+```bash
+PYTHONPATH=src/ python src/evaluation/simulate.py   --env RepoMan-v0 --exp my_run --seed 1   --formula "F square & blue" --render --num_episodes 1 --save_gif
+```
 
   --save_gifs with --render
   --gif_dir overrides root directory
   '--no-randomize_agent',    # fix agent start
   '--no-randomize_objects',  # fix object positions
 
-## Example formulas:
+### Example formulas:
 
 "F square_blue" — reach the blue square
 "F circle_purple & !square_blue U circle_purple" — reach purple circle while avoiding blue square
 "F square_beige & F circle_blue" — reach beige square then blue circle
 
-video game world:
+### Run Record
 
-Saved training status
+#### my_run
+
+Old way of training, no frozenset of sprites
 Training took 1:42:45.
 
+#### my_run2
+```bash
+ python run_repoman.py --name my_run2 --seed 1 --device cpu --num_procs 8
+```
+randomized agent start location
+randomized object locations
+every object can have frozenset{shape, color}
+Training took 2:23:35.
+
+# Zone Env
+
+## Eval
+
+### Run Record
+
+#### test
+```bash
+PYTHONPATH=src/ python run_zones.py --device gpu --name test --seed 1
+```
+Training took 6:14:24.
