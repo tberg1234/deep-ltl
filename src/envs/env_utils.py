@@ -39,6 +39,9 @@ def make_env(
     elif name.startswith('Letter'):
         env = make_letter_env(name, render_mode)
         max_steps = max_steps or 75
+    elif name.startswith('OfficeWorld'):
+        env = make_office_env(name, render_mode)
+        max_steps = max_steps or 200
     elif name.startswith('FlatWorld'):
         env = make_flatworld_env(name)
         max_steps = max_steps or 500
@@ -85,6 +88,13 @@ def make_safety_gym_env(name: str, render_mode: str | None = None):
 
 def make_letter_env(name: str, render_mode: str | None = None):
     import envs.letter_world
+
+    env = gymnasium.make(name, render_mode=render_mode)
+    return env
+
+
+def make_office_env(name: str, render_mode: str | None = None):
+    import envs.office_world
 
     env = gymnasium.make(name, render_mode=render_mode)
     return env

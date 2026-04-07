@@ -189,3 +189,13 @@ Training took 2:23:35.
 PYTHONPATH=src/ python run_zones.py --device gpu --name test --seed 1
 ```
 Training took 6:14:24.
+
+# Office World
+office_env.py — OfficeWorldEnv matches letter_env structure:
+
+gymnasium.Env with action_space=Discrete(4), wall-blocked movement (no wrapping)
+Observation: (13, 17, 10) — 8 letter channels (a,b,c,d,e,f,g,n) + agent + walls
+use_fixed_map=False (training): shuffles the 14 letter assignments among the 14 label positions, random agent start on any free non-label cell
+use_fixed_map=True (eval): uses FIXED_LABEL_MAP exactly as shown, agent at (10, 3) (right of A)
+Same API as letter_env: get_active_propositions(), get_propositions(), get_possible_assignments(), save/load_world_info()
+Training: python src/train/train_ppo.py --env OfficeWorldEnv-v0 --model_config OfficeWorldEnv-v0 ...

@@ -107,6 +107,28 @@ letter = ModelConfig(
     )
 )
 
+office_world = ModelConfig(
+    actor=ActorConfig(
+        layers=[64, 64, 64],
+        activation=nn.ReLU,
+    ),
+    critic=StandardNetConfig(
+        layers=[64, 64],
+        activation=nn.Tanh
+    ),
+    ltl_embedding_dim=32,
+    num_rnn_layers=1,
+    env_net=ConvNetConfig(
+        channels=[16, 32, 64],
+        kernel_size=(2, 2),
+        activation=nn.ReLU
+    ),
+    set_net=SetNetConfig(
+        layers=[32, 32],
+        activation=nn.ReLU
+    )
+)
+
 flatworld = ModelConfig(
     actor=ActorConfig(
         layers=[64, 64, 64],
